@@ -28,10 +28,10 @@ INCLUDEPATH    += ./include                     # Our own includes.
 MOC_DIR         = ./build/.moc                  # Qt's meta object compiler files.
 CONFIG( debug , debug | release ) {
 OBJECTS_DIR     = ./build/.obj/debug            # Object folder in debug mode.
-TARGET          = QiModbusd                     # Library name for the debug version.
+TARGET          = QModbusd                      # Library name for the debug version.
 } else {
 OBJECTS_DIR     = ./build/.obj/release          # Object folder in release mode.
-TARGET          = QiModbus                      # Library name for the release version.
+TARGET          = QModbus                       # Library name for the release version.
 }
 DESTDIR         = ./build/lib                   # Library files output folder.
 
@@ -54,23 +54,22 @@ LIB_INSTALL.files       = ./build/lib/*             # All release binary files c
 
 # Linux install locations.
 unix:!macx {
-HEADERS_INSTALL.path    = /usr/include/QiModbus/
+HEADERS_INSTALL.path    = /usr/include/QModbus/
 LIB_INSTALL.path        = /usr/lib/
 }
 
 # OSX install locations.
 macx {
-    FRAMEWORK_HEADERS.files = include/
-    FRAMEWORK_HEADERS.path = Headers
-    QMAKE_BUNDLE_DATA += FRAMEWORK_HEADERS
-    LIB_INSTALL.path = /Library/Frameworks/
+FRAMEWORK_HEADERS.files = include/
+FRAMEWORK_HEADERS.path = Headers
+QMAKE_BUNDLE_DATA += FRAMEWORK_HEADERS
+LIB_INSTALL.path = /Library/Frameworks/
 }
 
 # Windows install locations.
 win32 {
-HEADERS_INSTALL.path    = C:/GDF2/include/QiModbus
-LIB_INSTALL.path        = C:/GDF2/bin
-}
+HEADERS_INSTALL.path    = C:/windows/system32/include/QModbus
+LIB_INSTALL.path        = C:/windows/system32}
 
 INSTALLS = LIB_INSTALL
 !macx:INSTALLS += HEADERS_INSTALL                   # Header install not needed on Mac, since the framework stuff do it.
