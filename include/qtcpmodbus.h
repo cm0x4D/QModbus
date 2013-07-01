@@ -7,6 +7,7 @@
 ***********************************************************************************************************************/
 #pragma once
 
+
 /*** Base classes *****************************************************************************************************/
 #include <QtCore/QObject>
 #include <QAbstractModbus>
@@ -46,6 +47,11 @@ public:
     * Destructor.
     */
     virtual ~QTcpModbus();
+
+    inline bool isOpen() const
+    {
+        return isConnected();
+    }
 
     /*!
     * Connects to the given hostname (DNS lookups are done automatically) or ip encoded as string (Ex. 127.0.0.1) and

@@ -271,6 +271,57 @@ public:
         XonXoffFlowControl  = 0x02      //!< Xon/Xoff Software flow control.
     };
 
+    /*!
+     * Specifies the mode of the RTS pin drive in function to the data direction.
+     */
+    enum RtsDriveMode
+    {
+        /*!
+         * The RTS pin is not drivwen at all. This is the default setting.
+         */
+        RtsNotDriven ,
+
+        /*!
+         * The UART driver switches the RTS line automatically to active on TX on systems that support this feature.
+         * This is always the best option for RS485 devices, as the delay to switch back from output to input is
+         * very short, so the chance to loose data using this method is almost zero. The disadvantage is that the
+         * RS485 feature is not supported by the most serial drivers on the current mainline Linux kernel (3.5) and
+         * not on Mac OS X. Windows however should support this feature.
+         *
+         * The best option is to try this feature and falll back to the software conrolled solution if the hardware
+         * solution does not work.
+         */
+        RtsAutomaticActiveOnTx ,
+
+        /*!
+         * The UART driver switches the RTS line automatically to active on RX on systems that support this feature.
+         * This is always the best option for RS485 devices, as the delay to switch back from output to input is
+         * very short, so the chance to loose data using this method is almost zero. The disadvantage is that the
+         * RS485 feature is not supported by the most serial drivers on the current mainline Linux kernel (3.5) and
+         * not on Mac OS X. Windows however should support this feature.
+         *
+         * The best option is to try this feature and falll back to the software conrolled solution if the hardware
+         * solution does not work.
+         */
+        RtsAutomaticActiveOnRx ,
+
+        /*!
+         * The RTS pin is active during transmission and inactive during reception controlled by software. This may
+         * introduce problems, as the switching of the RTS signal can take some time on certain platforms because the
+         * receiver switches back to input to late and a part of the response gets lost. But it is the best option on
+         * systems that do not support the automatic switching of the RTS output pin.
+         */
+        RtsSoftwareActiveOnTx ,
+
+        /*!
+         * The RTS pin is inactive during transmission and active during reception controlled by software. This may
+         * introduce problems, as the switching of the RTS signal can take some time on certain platforms because the
+         * receiver switches back to input to late and a part of the response gets lost. But it is the best option on
+         * systems that do not support the automatic switching of the RTS output pin.
+         */
+        RtsSoftwareActiveOnRx
+    };
+
 private:
 
 #   ifdef Q_OS_UNIX /**************************************************************************************************/
@@ -286,6 +337,7 @@ private:
 #   endif /* Q_OS_WIN *************************************************************************************************/
 
     unsigned int _timeout;                  // Timeout to use in serial communication.
+    RtsDriveMode _rtsDriveMode;             // The mode in which the RTS pin is driven.
 
 public:
     /*!
@@ -306,10 +358,11 @@ public:
     * \param stopBits The number of stopbits to use. Default is one.
     * \param parity Parity mechanism to use. Default is none.
     * \param flowControl Flow control mechanism to use. Default is none.
+    * \param rtsDriveMode Sets the mode used to drive the RTS pin according to the actual data direction.
     * \return True if the port could be openend, false otherwise.
     */
     bool open( const QString &device , const BaudRate baudRate = BR9600 , const StopBits stopBits = OneStopbit ,
-               const Parity parity = NoParity , const FlowControl flowControl = NoFlowControl );
+               const Parity parity = NoParity , const FlowControl flowControl = NoFlowControl , RtsDriveMode rtsDriveMode = RtsNotDriven );
 
     /*!
     * Returns the state of the serial port handle.

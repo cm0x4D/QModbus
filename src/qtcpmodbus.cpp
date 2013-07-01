@@ -86,6 +86,9 @@ QList<bool> QTcpModbus::readCoils( const quint8 deviceAddress , const quint16 st
     pduStream << transactionId << (quint16)0 << (quint16)6
               << deviceAddress << (quint8)0x01 << startingAddress << quantityOfCoils;
 
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
+
     // Send the pdu.
     _socket.write( pdu );
 
@@ -164,6 +167,9 @@ QList<bool> QTcpModbus::readDiscreteInputs( const quint8 deviceAddress , const q
     pduStream.setByteOrder( QDataStream::BigEndian );
     pduStream << transactionId << (quint16)0 << (quint16)6
               << deviceAddress << (quint8)0x02 << startingAddress << quantityOfInputs;
+
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
 
     // Send the pdu.
     _socket.write( pdu );
@@ -244,7 +250,10 @@ QList<quint16> QTcpModbus::readHoldingRegisters( const quint8 deviceAddress , co
     pduStream << transactionId << (quint16)0 << (quint16)6
               << deviceAddress << (quint8)0x03 << startingAddress << quantityOfRegisters;
 
-    // Send the pdu.
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
+
+     // Send the pdu.
     _socket.write( pdu );
 
     // Await response.
@@ -321,6 +330,9 @@ QList<quint16> QTcpModbus::readInputRegisters( const quint8 deviceAddress , cons
     pduStream.setByteOrder( QDataStream::BigEndian );
     pduStream << transactionId << (quint16)0 << (quint16)6
               << deviceAddress << (quint8)0x04 << startingAddress << quantityOfInputRegisters;
+
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
 
     // Send the pdu.
     _socket.write( pdu );
@@ -400,6 +412,9 @@ bool QTcpModbus::writeSingleCoil( const quint8 deviceAddress , const quint16 out
     pduStream << transactionId << (quint16)0 << (quint16)6
               << deviceAddress << (quint8)0x05 << outputAddress << ( outputValue ? (quint16)0xFF00 : (quint16)0x0000 );
 
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
+
     // Send the pdu.
     _socket.write( pdu );
 
@@ -471,6 +486,9 @@ bool QTcpModbus::writeSingleRegister( const quint8 deviceAddress , const quint16
     pduStream.setByteOrder( QDataStream::BigEndian );
     pduStream << transactionId << (quint16)0 << (quint16)6
               << deviceAddress << (quint8)0x06 << outputAddress << registerValue;
+
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
 
     // Send the pdu.
     _socket.write( pdu );
@@ -559,6 +577,9 @@ bool QTcpModbus::writeMultipleCoils( const quint8 deviceAddress , const quint16 
     }
     pduStream << tmp;
 
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
+
     // Send the pdu.
     _socket.write( pdu );
 
@@ -638,6 +659,9 @@ bool QTcpModbus::writeMultipleRegisters( const quint8 deviceAddress , const quin
         pduStream << reg;
     }
 
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
+
     // Send the pdu.
     _socket.write( pdu );
 
@@ -709,6 +733,9 @@ bool QTcpModbus::maskWriteRegister( const quint8 deviceAddress , const quint16 r
     pduStream.setByteOrder( QDataStream::BigEndian );
     pduStream << transactionId << (quint16)0 << (quint16)8
               << deviceAddress << (quint8)0x16 << referenceAddress << andMask << orMask;
+
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
 
     // Send the pdu.
     _socket.write( pdu );
@@ -793,6 +820,9 @@ QList<quint16> QTcpModbus::writeReadMultipleRegisters( const quint8 deviceAddres
         pduStream << reg;
     }
 
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
+
     // Send the pdu.
     _socket.write( pdu );
 
@@ -870,6 +900,9 @@ QList<quint16> QTcpModbus::readFifoQueue( const quint8 deviceAddress , const qui
     pduStream.setByteOrder( QDataStream::BigEndian );
     pduStream << transactionId << (quint16)0 << (quint16)4
               << deviceAddress << (quint8)0x18 << fifoPointerAddress;
+
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
 
     // Send the pdu.
     _socket.write( pdu );
@@ -952,6 +985,9 @@ QByteArray QTcpModbus::executeCustomFunction( const quint8 deviceAddress , const
               << deviceAddress << modbusFunction;
     pdu += data;
 
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
+
     // Send the pdu.
     _socket.write( pdu );
 
@@ -1010,6 +1046,9 @@ QByteArray QTcpModbus::executeRaw( QByteArray &data , quint8 *const status ) con
         if ( status ) *status = NoConnection;
         return QByteArray();
     }
+
+    // Clear the RX buffer before making the request.
+    _socket.readAll();
 
     // Send the data.
     _socket.write( data );

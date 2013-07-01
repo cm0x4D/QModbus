@@ -49,6 +49,12 @@ public:
     virtual ~QAbstractModbus();
 
     /*!
+     * Returns true if the ASCII or RTU modbus ports are open or the TCP modbus is connected, false otherwise.
+     * \return True if open/connected, false otherwise.
+     */
+    virtual bool isOpen() const = 0;
+
+    /*!
     * Returns the currently used timeout in milliseconds.
     * \return Timeout in milliseconds.
     */
