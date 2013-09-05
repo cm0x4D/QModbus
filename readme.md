@@ -20,7 +20,7 @@ To install the library on linux, you just have to create the Makefiles using qma
 To install the library on Mac OS X, you just have to create the Makefiles using qmake with the spec file for clang and then build the library using make and install the library to /System/Frameworks using make install.
 
     # cd QModbus
-    # qmake -spec macx-clang
+    # qmake -spec macx-llvm
     # make 
     # sudo make install
 
