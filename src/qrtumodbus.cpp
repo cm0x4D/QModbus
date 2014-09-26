@@ -224,7 +224,7 @@ bool QRtuModbus::open( const QString &device , const BaudRate baudRate , const S
 # /***/ ifdef Q_OS_WIN /***********************************************************************************************/
 
     // Try to open the serial com port.
-    _commPort = CreateFileA( device.toAscii().data() , GENERIC_READ | GENERIC_WRITE , 0 , 0 , OPEN_EXISTING ,
+	_commPort = CreateFileA( device.toLatin1().data() , GENERIC_READ | GENERIC_WRITE , 0 , 0 , OPEN_EXISTING ,
                              FILE_ATTRIBUTE_NORMAL , 0 );
 
     if ( _commPort == INVALID_HANDLE_VALUE )
@@ -308,7 +308,12 @@ bool QRtuModbus::open( const QString &device , const BaudRate baudRate , const S
     if ( _rtsDriveMode != RtsNotDriven )
     {
         qDebug( "RTS Driving not implemented on Windows!" );
+#ifndef Q_OS_WIN
         _commPort.close();
+#else
+        CloseHandle(_commPort);
+        _commPort = INVALID_HANDLE_VALUE;
+#endif
         return false;
     }
 
