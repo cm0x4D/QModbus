@@ -14,6 +14,7 @@ To install the library on linux, you just have to create the Makefiles using qma
     # cd QModbus
     # qmake
     # make 
+    # qmake
     # sudo make install
 
 ## Mac OS X
@@ -22,6 +23,7 @@ To install the library on Mac OS X, you just have to create the Makefiles using 
     # cd QModbus
     # qmake -spec macx-llvm
     # make 
+    # qmake
     # sudo make install
 
 ## Windows
@@ -30,6 +32,7 @@ To install the library on Microsoft Windows, you just have to create the Makefil
     # cd QModbus
     # qmake
     # make
+    # qmake
     # sudo make install
 
 Note that this installation instructions are for the mingw version of Qt. For the version based on Microsoft's Visual Studio compiler, you shoud replace make by nmake above.
