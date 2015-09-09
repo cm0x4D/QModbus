@@ -45,7 +45,7 @@ The simplest solution is to build your project either using qmake or Qt Creator.
 ## Linux
 
     INCLUDEPATH += /usr/include/QModbus
-    LIBS += QModbus
+    LIBS += -lQModbus
 
 ## Mac OS X
 
