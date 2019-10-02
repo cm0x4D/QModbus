@@ -1,7 +1,7 @@
+[![Build Status](https://travis-ci.org/cm0x4D/QModbus.svg?branch=master)](https://travis-ci.org/cm0x4D/QModbus)
+
 # Abstract
 MIT licensed multiplatform Modbus client library supporting Modbus ASCII, Modbus RTU and Modbus TCP connections.
-
-[![Build Status](https://travis-ci.org/cm0x4D/QModbus.svg?branch=master)](https://travis-ci.org/cm0x4D/QModbus)
 
 Based on Qt (4|5) and completely written in C++. 
 
