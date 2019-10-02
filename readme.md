@@ -1,5 +1,5 @@
 # Abstract
-LGPL licensed multiplatform Modbus client library supporting Modbus ASCII, Modbus RTU and Modbus TCP connections. 
+MIT licensed multiplatform Modbus client library supporting Modbus ASCII, Modbus RTU and Modbus TCP connections.
 
 Based on Qt (4|5) and completely written in C++. 
 
@@ -56,7 +56,3 @@ The simplest solution is to build your project either using qmake or Qt Creator.
 
     INCLUDEPATH += c:/windows/system32/include/QModbus
     LIBS += -L c:/windows/system32 -lQModbus
-
-### Acknowledgments
-
-Thanks to Jan Verrept at OneClick in Belgium for the artwork used as the project icon.
