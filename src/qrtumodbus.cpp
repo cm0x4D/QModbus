@@ -1,90 +1,67 @@
-/***********************************************************************************************************************
-* QRtuModbus implementation.                                                                                          *
-***********************************************************************************************************************/
 #include <QRtuModbus>
-
-
-/*** Qt includes ******************************************************************************************************/
 #include <QtCore/QDataStream>
 #include <QtEndian>
-
-
-/*** System includes **************************************************************************************************/
 #include <unistd.h>
+#ifdef Q_OS_UNIX
+#   include <sys/ioctl.h>
+#   ifndef Q_OS_MACX
+#       include <linux/serial.h>
+#   endif
 
-
-/*** Definitions ******************************************************************************************************/
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
-#include <sys/ioctl.h>
-
-# /***/ ifndef Q_OS_MACX /*********************************************************************************************/
-#include <linux/serial.h>
-# /***/ endif /********************************************************************************************************/
-inline void setRts( QFile & f , bool active )
-{
-    static int status = 0;
-    if ( status == 0 ) ioctl( f.handle() , TIOCMGET , &status );
-    active ? status |= TIOCM_RTS : status &= ~TIOCM_RTS;
-    ioctl( f.handle() , TIOCMSET , &status );
-}
+    inline void setRts(QFile& file, bool active) {
+        int status;
+        ioctl(file.handle(), TIOCMGET, &status);
+        active ? status |= TIOCM_RTS : status &= ~TIOCM_RTS;
+        ioctl(file.handle(), TIOCMSET, &status);
+    }
 
 #   define _read                _commPort.read
 #   define _readAll             _commPort.readAll
 #   define _readLine            _commPort.readLine
 
-# /***/ ifndef Q_OS_MACX /*********************************************************************************************/
-#   define _write( data )    do {                                                                                   \
-                                    if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                  \
-                                         _rtsDriveMode == RtsSoftwareActiveOnRx )                                   \
-                                        setRts( _commPort , _rtsDriveMode == RtsSoftwareActiveOnTx );               \
-                                    _commPort.write( (data) );                                                      \
-                                    if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                  \
-                                         _rtsDriveMode == RtsSoftwareActiveOnRx )                                   \
-                                    {                                                                               \
-                                        unsigned int lsr;                                                           \
-                                        do {                                                                        \
-                                            ioctl( _commPort.handle() , TIOCSERGETLSR , &lsr );                     \
-                                        } while ( ( lsr & TIOCSER_TEMT ) == 0 );                                    \
-                                        setRts( _commPort , _rtsDriveMode == RtsSoftwareActiveOnRx );               \
-                                    }                                                                               \
-                                } while( 0 )
-# /***/ else /*********************************************************************************************************/
-#   define _write( data )    do {                                                                                   \
-                                    if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                  \
-                                         _rtsDriveMode == RtsSoftwareActiveOnRx )                                   \
-                                        setRts( _commPort , _rtsDriveMode == RtsSoftwareActiveOnTx );               \
-                                    _commPort.write( (data) );                                                      \
-                                    if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                  \
-                                         _rtsDriveMode == RtsSoftwareActiveOnRx )                                   \
-                                    {                                                                               \
-                                        tcdrain( _commPort.handle() );                                              \
-                                    }                                                                               \
-                                } while( 0 )
-# /***/ endif  /*******************************************************************************************************/
+#   ifndef Q_OS_MACX
+#       define _write( data )    do {                                                                                  \
+                                        if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                 \
+                                             _rtsDriveMode == RtsSoftwareActiveOnRx )                                  \
+                                            setRts( _commPort , _rtsDriveMode == RtsSoftwareActiveOnTx );              \
+                                        _commPort.write( (data) );                                                     \
+                                        if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                 \
+                                             _rtsDriveMode == RtsSoftwareActiveOnRx )                                  \
+                                        {                                                                              \
+                                            unsigned int lsr;                                                          \
+                                            do {                                                                       \
+                                                ioctl( _commPort.handle() , TIOCSERGETLSR , &lsr );                    \
+                                            } while ( ( lsr & TIOCSER_TEMT ) == 0 );                                   \
+                                            setRts( _commPort , _rtsDriveMode == RtsSoftwareActiveOnRx );              \
+                                        }                                                                              \
+                                    } while( 0 )
+#   else
+#       define _write( data )    do {                                                                                  \
+                                        if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                 \
+                                             _rtsDriveMode == RtsSoftwareActiveOnRx )                                  \
+                                            setRts( _commPort , _rtsDriveMode == RtsSoftwareActiveOnTx );              \
+                                        _commPort.write( (data) );                                                     \
+                                        if ( _rtsDriveMode == RtsSoftwareActiveOnTx ||                                 \
+                                             _rtsDriveMode == RtsSoftwareActiveOnRx )                                  \
+                                        {                                                                              \
+                                            tcdrain( _commPort.handle() );                                             \
+                                        }                                                                              \
+                                    } while( 0 )
+#   endif
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#endif
 
+QAbstractModbus::~QAbstractModbus() {}
 
-/*** Abstract interface class destructor implementation ***************************************************************/
-QAbstractModbus::~QAbstractModbus()
-{}
+QRtuModbus::QRtuModbus(): _timeout(500), _rtsDriveMode(RtsNotDriven) {}
 
-
-/*** Class implementation *********************************************************************************************/
-QRtuModbus::QRtuModbus() : _timeout( 500 ) , _rtsDriveMode( RtsNotDriven )
-{}
-
-QRtuModbus::~QRtuModbus()
-{
+QRtuModbus::~QRtuModbus() {
     close();
 }
 
-bool QRtuModbus::open( const QString &device , const BaudRate baudRate , const StopBits stopBits , const Parity parity ,
-                       const FlowControl flowControl , RtsDriveMode rtsDriveMode )
-{
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+bool QRtuModbus::open(const QString &device, BaudRate baudRate, StopBits stopBits, Parity parity,
+                      FlowControl flowControl, RtsDriveMode rtsDriveMode) {
+#ifdef Q_OS_UNIX
 
     // Setup the filename to use.
     _commPort.setFileName( device );
@@ -156,9 +133,9 @@ bool QRtuModbus::open( const QString &device , const BaudRate baudRate , const S
     settings.c_cc[VMIN] = 0;
     ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#endif
 
-# /***/ if defined( Q_OS_UNIX ) && ! defined( Q_OS_MACX ) /************************************************************/
+#if defined( Q_OS_UNIX ) && ! defined( Q_OS_MACX )
 
     // Setup RTS handling:
     _rtsDriveMode = rtsDriveMode;
@@ -206,9 +183,9 @@ bool QRtuModbus::open( const QString &device , const BaudRate baudRate , const S
         }
     }
 
-# /***/ endif /* O_OS_UNIX && ! Q_OS_MACX *****************************************************************************/
+#endif
 
-# /***/ ifdef Q_OS_MACX /**********************************************************************************************/
+#ifdef Q_OS_MACX
 
     // TODO: add mac implementation of the RTS control feature...
     _rtsDriveMode = rtsDriveMode;
@@ -219,9 +196,9 @@ bool QRtuModbus::open( const QString &device , const BaudRate baudRate , const S
         return false;
     }
 
-# /***/ endif /* Q_OS_MACX ********************************************************************************************/
+#endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#ifdef Q_OS_WIN
 
     // Try to open the serial com port.
 	_commPort = CreateFileA( device.toLatin1().data() , GENERIC_READ | GENERIC_WRITE , 0 , 0 , OPEN_EXISTING ,
@@ -317,65 +294,55 @@ bool QRtuModbus::open( const QString &device , const BaudRate baudRate , const S
         return false;
     }
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
+#endif
 
     // Ok, we are ready.
     return true;
 }
 
-bool QRtuModbus::isOpen() const
-{
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+bool QRtuModbus::isOpen() const {
+#ifdef Q_OS_UNIX
 
     // Delegate this to the QFile object.
     return _commPort.isOpen();
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#ifdef Q_OS_WIN
 
     // If we have a valid handle, we consider the port to be open...
     return ( _commPort != INVALID_HANDLE_VALUE );
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
-
+#endif
 }
 
-void QRtuModbus::close()
-{
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+void QRtuModbus::close() {
+#ifdef Q_OS_UNIX
 
     // Close the file.
     _commPort.close();
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#ifdef Q_OS_WIN
 
     // Close the handle.
     CloseHandle( _commPort );
     _commPort = INVALID_HANDLE_VALUE;
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
-
+#endif
 }
 
-unsigned int QRtuModbus::timeout( void ) const
-{
+unsigned int QRtuModbus::timeout() const {
     return _timeout;
 }
 
-void QRtuModbus::setTimeout( const unsigned int timeout )
-{
+void QRtuModbus::setTimeout(unsigned int timeout) {
     _timeout = timeout;
 
     // If the file is open, change the timeout on the fly.
-    if ( isOpen() )
-    {
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+    if ( isOpen() ) {
+#   ifdef Q_OS_UNIX
 
         struct termios settings;
         ::tcgetattr( _commPort.handle() , &settings );
@@ -383,9 +350,9 @@ void QRtuModbus::setTimeout( const unsigned int timeout )
         settings.c_cc[VMIN] = 0;
         ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#   ifdef Q_OS_WIN
 
         COMMTIMEOUTS timeouts = { 0 };
         GetCommTimeouts( _commPort , &timeouts );
@@ -394,14 +361,12 @@ void QRtuModbus::setTimeout( const unsigned int timeout )
         timeouts.WriteTotalTimeoutConstant = _timeout;
         SetCommTimeouts( _commPort , &timeouts );
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
-
+#   endif
     }
 }
 
-QList<bool> QRtuModbus::readCoils( const quint8 deviceAddress , const quint16 startingAddress ,
-                                    const quint16 quantityOfCoils , quint8 *const status ) const
-{
+QList<bool> QRtuModbus::readCoils(quint8 deviceAddress, quint16 startingAddress, quint16 quantityOfCoils,
+                                  quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -493,9 +458,8 @@ QList<bool> QRtuModbus::readCoils( const quint8 deviceAddress , const quint16 st
     return QList<bool>();
 }
 
-QList<bool> QRtuModbus::readDiscreteInputs( const quint8 deviceAddress , const quint16 startingAddress ,
-                                             const quint16 quantityOfInputs , quint8 *const status ) const
-{
+QList<bool> QRtuModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startingAddress, quint16 quantityOfInputs,
+                                           quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -587,9 +551,8 @@ QList<bool> QRtuModbus::readDiscreteInputs( const quint8 deviceAddress , const q
     return QList<bool>();
 }
 
-QList<quint16> QRtuModbus::readHoldingRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                                  const quint16 quantityOfRegisters , quint8 *const status ) const
-{
+QList<quint16> QRtuModbus::readHoldingRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                                quint16 quantityOfRegisters, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -680,9 +643,8 @@ QList<quint16> QRtuModbus::readHoldingRegisters( const quint8 deviceAddress , co
     return QList<quint16>();
 }
 
-QList<quint16> QRtuModbus::readInputRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                                const quint16 quantityOfInputRegisters , quint8 *const status ) const
-{
+QList<quint16> QRtuModbus::readInputRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                              quint16 quantityOfInputRegisters, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -773,9 +735,8 @@ QList<quint16> QRtuModbus::readInputRegisters( const quint8 deviceAddress , cons
     return QList<quint16>();
 }
 
-bool QRtuModbus::writeSingleCoil( const quint8 deviceAddress , const quint16 outputAddress ,
-                                   const bool outputValue , quint8 *const status ) const
-{
+bool QRtuModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, bool outputValue,
+                                 quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -858,9 +819,8 @@ bool QRtuModbus::writeSingleCoil( const quint8 deviceAddress , const quint16 out
     return false;
 }
 
-bool QRtuModbus::writeSingleRegister( const quint8 deviceAddress , const quint16 outputAddress ,
-                                       const quint16 registerValue , quint8 *const status ) const
-{
+bool QRtuModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddress, quint16 registerValue,
+                                     quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -943,9 +903,8 @@ bool QRtuModbus::writeSingleRegister( const quint8 deviceAddress , const quint16
     return false;
 }
 
-bool QRtuModbus::writeMultipleCoils( const quint8 deviceAddress , const quint16 startingAddress ,
-                                      const QList<bool> & outputValues , quint8 *const status ) const
-{
+bool QRtuModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddress, const QList<bool>& outputValues,
+                                    quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1043,9 +1002,8 @@ bool QRtuModbus::writeMultipleCoils( const quint8 deviceAddress , const quint16 
     return false;
 }
 
-bool QRtuModbus::writeMultipleRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                          const QList<quint16> & registersValues , quint8 *const status ) const
-{
+bool QRtuModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                        const QList<quint16>& registersValues, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1135,9 +1093,8 @@ bool QRtuModbus::writeMultipleRegisters( const quint8 deviceAddress , const quin
     return false;
 }
 
-bool QRtuModbus::maskWriteRegister( const quint8 deviceAddress , const quint16 referenceAddress ,
-                                     const quint16 andMask , const quint16 orMask , quint8 *const status ) const
-{
+bool QRtuModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddress, quint16 andMask,
+                                   const quint16 orMask, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1220,13 +1177,9 @@ bool QRtuModbus::maskWriteRegister( const quint8 deviceAddress , const quint16 r
     return false;
 }
 
-
-QList<quint16> QRtuModbus::writeReadMultipleRegisters( const quint8 deviceAddress ,
-                                                        const quint16 writeStartingAddress ,
-                                                        const QList<quint16> & writeValues ,
-                                                        const quint16 readStartingAddress ,
-                                                        const quint16 quantityToRead , quint8 *const status) const
-{
+QList<quint16> QRtuModbus::writeReadMultipleRegisters(quint8 deviceAddress, quint16 writeStartingAddress,
+                                                      const QList<quint16>& writeValues, quint16 readStartingAddress,
+                                                      quint16 quantityToRead, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1324,9 +1277,8 @@ QList<quint16> QRtuModbus::writeReadMultipleRegisters( const quint8 deviceAddres
     return QList<quint16>();
 }
 
-QList<quint16> QRtuModbus::readFifoQueue( const quint8 deviceAddress , const quint16 fifoPointerAddress ,
-                                           quint8 *const status ) const
-{
+QList<quint16> QRtuModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPointerAddress,
+                                         quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1416,9 +1368,8 @@ QList<quint16> QRtuModbus::readFifoQueue( const quint8 deviceAddress , const qui
     return QList<quint16>();
 }
 
-QByteArray QRtuModbus::executeCustomFunction( const quint8 deviceAddress , const quint8 modbusFunction ,
-                                               QByteArray &data , quint8 *const status ) const
-{
+QByteArray QRtuModbus::executeCustomFunction(const quint8 deviceAddress, quint8 modbusFunction,
+                                             const QByteArray& data, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1500,8 +1451,7 @@ QByteArray QRtuModbus::executeCustomFunction( const quint8 deviceAddress , const
     return QByteArray();
 }
 
-QByteArray QRtuModbus::executeRaw( QByteArray &data , quint8 *const status ) const
-{
+QByteArray QRtuModbus::executeRaw(const QByteArray& data, quint8* const status) const {
     QByteArray response;
 
     // Are we connected ?
@@ -1531,17 +1481,15 @@ QByteArray QRtuModbus::executeRaw( QByteArray &data , quint8 *const status ) con
     return response;
 }
 
-QByteArray QRtuModbus::calculateCheckSum( QByteArray &data ) const
-{
+QByteArray QRtuModbus::calculateCheckSum(const QByteArray& data) const {
     quint16 crc = _calculateCrc( data );
     return QByteArray( (char *)&crc , 2 );
 }
 
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
-#include <QtDebug>
-QByteArray QRtuModbus::_read( const int numberBytes ) const
-{
+#ifdef Q_OS_WIN
+
+QByteArray QRtuModbus::_read(int numberBytes) const {
     QByteArray data( numberBytes , 0 );
     DWORD size = 0;
 
@@ -1559,8 +1507,7 @@ QByteArray QRtuModbus::_read( const int numberBytes ) const
     return data;
 }
 
-QByteArray QRtuModbus::_readAll( void ) const
-{
+QByteArray QRtuModbus::_readAll() const {
     QByteArray data( 1024 , 0 );
     DWORD size = 0;
     if ( ReadFile( _commPort , data.data() , 1024 , &size , NULL ) )
@@ -1575,8 +1522,7 @@ QByteArray QRtuModbus::_readAll( void ) const
     return data;
 }
 
-QByteArray QRtuModbus::_readLine( int maxBytes ) const
-{
+QByteArray QRtuModbus::_readLine(int maxBytes) const {
     QByteArray data;
     DWORD size = 0;
 
@@ -1594,8 +1540,7 @@ QByteArray QRtuModbus::_readLine( int maxBytes ) const
     return data;
 }
 
-bool QRtuModbus::_write( QByteArray &data ) const
-{
+bool QRtuModbus::_write(const QByteArray& data) const {
     DWORD size = 0;
 
     if ( data.size() == 0 ) return true;
@@ -1607,11 +1552,9 @@ bool QRtuModbus::_write( QByteArray &data ) const
     return false;
 }
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
+#endif
 
-
-quint16 QRtuModbus::_calculateCrc( const QByteArray &pdu ) const
-{
+quint16 QRtuModbus::_calculateCrc(const QByteArray& pdu) const {
     quint16 crc , carryFlag , tmp;
 
     crc = 0xFFFF;
@@ -1633,8 +1576,7 @@ quint16 QRtuModbus::_calculateCrc( const QByteArray &pdu ) const
     return crc;
 }
 
-bool QRtuModbus::_checkCrc( const QByteArray &pdu ) const
-{
+bool QRtuModbus::_checkCrc(const QByteArray& pdu) const {
     QByteArray msg = pdu.left( pdu.size() - 2 );
 
     quint16 crc = _calculateCrc( msg );

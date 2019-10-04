@@ -1,17 +1,8 @@
-/***********************************************************************************************************************
-* QTcpModbus imlpementation.                                                                                          *
-***********************************************************************************************************************/
 #include <QTcpModbus>
-
-
-/*** Qt includes ******************************************************************************************************/
 #include <QtCore/QByteArray>
 #include <QtCore/QDataStream>
 
-
-/*** Class implementation *********************************************************************************************/
-QTcpModbus::QTcpModbus() : _timeout( 500 ) , _connectTimeout( 1000 )
-{
+QTcpModbus::QTcpModbus(): _timeout( 500 ), _connectTimeout( 1000 ) {
     // Initialize random number generator to use for transaction ID generation.
     qsrand( time( NULL ) );
 
@@ -19,14 +10,12 @@ QTcpModbus::QTcpModbus() : _timeout( 500 ) , _connectTimeout( 1000 )
     QObject::connect( &_socket , SIGNAL( disconnected() ) , this , SIGNAL( connectionLost() ) );
 }
 
-QTcpModbus::~QTcpModbus()
-{
+QTcpModbus::~QTcpModbus() {
     // Finaly disconnect.
     disconnect();
 }
 
-bool QTcpModbus::connect( const QString &host , const quint16 port )
-{
+bool QTcpModbus::connect(const QString& host, quint16 port) {
     // Connect the socket to the host.
     _socket.connectToHost( host , port );
 
@@ -34,41 +23,34 @@ bool QTcpModbus::connect( const QString &host , const quint16 port )
     return _socket.waitForConnected( _connectTimeout );
 }
 
-bool QTcpModbus::isConnected( void ) const
-{
+bool QTcpModbus::isConnected() const {
     // Ask the socket if it is connected.
     return ( _socket.state() == QAbstractSocket::ConnectedState );
 }
 
-void QTcpModbus::disconnect( void )
-{
+void QTcpModbus::disconnect() {
     // Close the socket's connection.
     _socket.close();
 }
 
-int QTcpModbus::connectTimeout( void ) const
-{
+int QTcpModbus::connectTimeout() const {
     return _connectTimeout;
 }
 
-void QTcpModbus::setConnectTimeout( const int timeout )
-{
+void QTcpModbus::setConnectTimeout(int timeout) {
     _connectTimeout = timeout;
 }
 
-unsigned int QTcpModbus::timeout( void ) const
-{
+unsigned int QTcpModbus::timeout() const {
     return _timeout;
 }
 
-void QTcpModbus::setTimeout( const unsigned int timeout )
-{
+void QTcpModbus::setTimeout(unsigned int timeout) {
     _timeout = timeout;
 }
 
-QList<bool> QTcpModbus::readCoils( const quint8 deviceAddress , const quint16 startingAddress ,
-                                    const quint16 quantityOfCoils , quint8 *const status ) const
-{
+QList<bool> QTcpModbus::readCoils(quint8 deviceAddress, quint16 startingAddress, quint16 quantityOfCoils,
+                                  quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -148,9 +130,8 @@ QList<bool> QTcpModbus::readCoils( const quint8 deviceAddress , const quint16 st
     return QList<bool>();
 }
 
-QList<bool> QTcpModbus::readDiscreteInputs( const quint8 deviceAddress , const quint16 startingAddress ,
-                                             const quint16 quantityOfInputs , quint8 *const status ) const
-{
+QList<bool> QTcpModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startingAddress, quint16 quantityOfInputs,
+                                           quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -230,9 +211,8 @@ QList<bool> QTcpModbus::readDiscreteInputs( const quint8 deviceAddress , const q
     return QList<bool>();
 }
 
-QList<quint16> QTcpModbus::readHoldingRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                                  const quint16 quantityOfRegisters , quint8 *const status ) const
-{
+QList<quint16> QTcpModbus::readHoldingRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                                quint16 quantityOfRegisters, quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -311,9 +291,8 @@ QList<quint16> QTcpModbus::readHoldingRegisters( const quint8 deviceAddress , co
     return QList<quint16>();
 }
 
-QList<quint16> QTcpModbus::readInputRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                                const quint16 quantityOfInputRegisters , quint8 *const status ) const
-{
+QList<quint16> QTcpModbus::readInputRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                              quint16 quantityOfInputRegisters, quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -392,9 +371,8 @@ QList<quint16> QTcpModbus::readInputRegisters( const quint8 deviceAddress , cons
     return QList<quint16>();
 }
 
-bool QTcpModbus::writeSingleCoil( const quint8 deviceAddress , const quint16 outputAddress ,
-                                   const bool outputValue , quint8 *const status ) const
-{
+bool QTcpModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, bool outputValue,
+                                 quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -467,9 +445,8 @@ bool QTcpModbus::writeSingleCoil( const quint8 deviceAddress , const quint16 out
     return false;
 }
 
-bool QTcpModbus::writeSingleRegister( const quint8 deviceAddress , const quint16 outputAddress ,
-                                       const quint16 registerValue , quint8 *const status ) const
-{
+bool QTcpModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddress, quint16 registerValue,
+                                     quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -542,9 +519,8 @@ bool QTcpModbus::writeSingleRegister( const quint8 deviceAddress , const quint16
     return false;
 }
 
-bool QTcpModbus::writeMultipleCoils( const quint8 deviceAddress , const quint16 startingAddress ,
-                                      const QList<bool> & outputValues , quint8 *const status ) const
-{
+bool QTcpModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddress, const QList<bool>& outputValues,
+                                    quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -632,9 +608,8 @@ bool QTcpModbus::writeMultipleCoils( const quint8 deviceAddress , const quint16 
     return false;
 }
 
-bool QTcpModbus::writeMultipleRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                          const QList<quint16> & registersValues , quint8 *const status ) const
-{
+bool QTcpModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                        const QList<quint16>& registersValues, quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -714,9 +689,8 @@ bool QTcpModbus::writeMultipleRegisters( const quint8 deviceAddress , const quin
     return false;
 }
 
-bool QTcpModbus::maskWriteRegister( const quint8 deviceAddress , const quint16 referenceAddress ,
-                                     const quint16 andMask , const quint16 orMask , quint8 *const status ) const
-{
+bool QTcpModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddress, quint16 andMask, quint16 orMask,
+                                   quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -789,13 +763,9 @@ bool QTcpModbus::maskWriteRegister( const quint8 deviceAddress , const quint16 r
     return false;
 }
 
-
-QList<quint16> QTcpModbus::writeReadMultipleRegisters( const quint8 deviceAddress ,
-                                                        const quint16 writeStartingAddress ,
-                                                        const QList<quint16> & writeValues ,
-                                                        const quint16 readStartingAddress ,
-                                                        const quint16 quantityToRead , quint8 *const status ) const
-{
+QList<quint16> QTcpModbus::writeReadMultipleRegisters(quint8 deviceAddress, quint16 writeStartingAddress,
+                                                      const QList<quint16>& writeValues, quint16 readStartingAddress,
+                                                      quint16 quantityToRead, quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -881,9 +851,8 @@ QList<quint16> QTcpModbus::writeReadMultipleRegisters( const quint8 deviceAddres
     return QList<quint16>();
 }
 
-QList<quint16> QTcpModbus::readFifoQueue( const quint8 deviceAddress , const quint16 fifoPointerAddress ,
-                                           quint8 *const status ) const
-{
+QList<quint16> QTcpModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPointerAddress,
+                                         quint8* const status ) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -964,9 +933,8 @@ QList<quint16> QTcpModbus::readFifoQueue( const quint8 deviceAddress , const qui
     return QList<quint16>();
 }
 
-QByteArray QTcpModbus::executeCustomFunction( const quint8 deviceAddress , const quint8 modbusFunction ,
-                                               QByteArray &data , quint8 *const status ) const
-{
+QByteArray QTcpModbus::executeCustomFunction(quint8 deviceAddress, quint8 modbusFunction, const QByteArray& data,
+                                             quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -1038,8 +1006,7 @@ QByteArray QTcpModbus::executeCustomFunction( const quint8 deviceAddress , const
     return QByteArray();
 }
 
-QByteArray QTcpModbus::executeRaw( QByteArray &data , quint8 *const status ) const
-{
+QByteArray QTcpModbus::executeRaw(const QByteArray& data, quint8* const status) const {
     // Are we connected ?
     if ( !isConnected() )
     {
@@ -1062,8 +1029,7 @@ QByteArray QTcpModbus::executeRaw( QByteArray &data , quint8 *const status ) con
     return _socket.readAll();
 }
 
-QByteArray QTcpModbus::calculateCheckSum( QByteArray &data ) const
-{
+QByteArray QTcpModbus::calculateCheckSum(const QByteArray& data ) const {
     Q_UNUSED( data );
     return QByteArray();
 }

@@ -1,43 +1,23 @@
-/***********************************************************************************************************************
-* QAsciiModbus implementation.                                                                                        *
-***********************************************************************************************************************/
 #include <QAsciiModbus>
-
-
-/*** Qt includes ******************************************************************************************************/
 #include <QtCore/QDataStream>
-
-
-/*** System includes **************************************************************************************************/
 #include <unistd.h>
 
-
-/*** Definitions ******************************************************************************************************/
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
-
+#ifdef Q_OS_UNIX
 #   define _read        _commPort.read
 #   define _readAll     _commPort.readAll
 #   define _readLine    _commPort.readLine
 #   define _write       _commPort.write
+#endif
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+QAsciiModbus::QAsciiModbus(): _timeout( 500 ) {}
 
-
-/*** Class implememtation *********************************************************************************************/
-QAsciiModbus::QAsciiModbus() : _timeout( 500 )
-{}
-
-QAsciiModbus::~QAsciiModbus()
-{
+QAsciiModbus::~QAsciiModbus() {
     close();
 }
 
-bool QAsciiModbus::open( const QString &device , const BaudRate baudRate , const BitsPerCharacter bitPerCharacter ,
-                          const StopBits stopBits , const Parity parity , const FlowControl flowControl )
-{
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+bool QAsciiModbus::open(const QString &device, BaudRate baudRate, BitsPerCharacter bitPerCharacter,
+                        StopBits stopBits, Parity parity, FlowControl flowControl) {
+#   ifdef Q_OS_UNIX
 
     // Setup the filename to use.
     _commPort.setFileName( device );
@@ -109,9 +89,9 @@ bool QAsciiModbus::open( const QString &device , const BaudRate baudRate , const
     settings.c_cc[VMIN] = 0;
     ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#   endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#   ifdef Q_OS_WIN
 
     // Try to open the serial com port.
     _commPort = CreateFileA( device.toAscii().data() , GENERIC_READ | GENERIC_WRITE , 0 , 0 , OPEN_EXISTING ,
@@ -194,65 +174,56 @@ bool QAsciiModbus::open( const QString &device , const BaudRate baudRate , const
     SetCommState( _commPort , &settings );
     SetCommTimeouts( _commPort , &timeouts );
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
+#   endif
 
     // Ok, we are ready.
     return true;
 }
 
-bool QAsciiModbus::isOpen() const
-{
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+bool QAsciiModbus::isOpen() const {
+#   ifdef Q_OS_UNIX
 
     // Delegate this to the QFile object.
     return _commPort.isOpen();
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#   endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#   ifdef Q_OS_WIN
 
     // If we have a valid handle, we consider the port to be open...
     return ( _commPort != INVALID_HANDLE_VALUE );
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
-
+#   endif
 }
 
-void QAsciiModbus::close()
-{
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+void QAsciiModbus::close() {
+#   ifdef Q_OS_UNIX
 
     // Close the file.
     _commPort.close();
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#   endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#   ifdef Q_OS_WIN
 
     // Close the handle.
     CloseHandle( _commPort );
     _commPort = INVALID_HANDLE_VALUE;
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
-
+#   endif
 }
 
-unsigned int QAsciiModbus::timeout( void ) const
-{
+unsigned int QAsciiModbus::timeout() const {
     return _timeout;
 }
 
-void QAsciiModbus::setTimeout( const unsigned int timeout )
-{
+void QAsciiModbus::setTimeout(unsigned int timeout) {
     _timeout = timeout;
 
     // If the file is open, change the timeout on the fly.
     if ( isOpen() )
     {
-
-# /***/ ifdef Q_OS_UNIX /**********************************************************************************************/
+#   ifdef Q_OS_UNIX
 
         struct termios settings;
         ::tcgetattr( _commPort.handle() , &settings );
@@ -260,9 +231,9 @@ void QAsciiModbus::setTimeout( const unsigned int timeout )
         settings.c_cc[VMIN] = 0;
         ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
-# /***/ endif /* Q_OS_UNIX ********************************************************************************************/
+#   endif
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
+#   ifdef Q_OS_WIN
 
         COMMTIMEOUTS timeouts = { 0 };
         GetCommTimeouts( _commPort , &timeouts );
@@ -271,14 +242,12 @@ void QAsciiModbus::setTimeout( const unsigned int timeout )
         timeouts.WriteTotalTimeoutConstant = _timeout;
         SetCommTimeouts( _commPort , &timeouts );
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
-
+#   endif
     }
 }
 
-QList<bool> QAsciiModbus::readCoils( const quint8 deviceAddress , const quint16 startingAddress ,
-                                      const quint16 quantityOfCoils , quint8 *const status ) const
-{
+QList<bool> QAsciiModbus::readCoils(quint8 deviceAddress, quint16 startingAddress, quint16 quantityOfCoils,
+                                    quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -366,9 +335,8 @@ QList<bool> QAsciiModbus::readCoils( const quint8 deviceAddress , const quint16 
     return QList<bool>();
 }
 
-QList<bool> QAsciiModbus::readDiscreteInputs( const quint8 deviceAddress , const quint16 startingAddress ,
-                                               const quint16 quantityOfInputs , quint8 *const status ) const
-{
+QList<bool> QAsciiModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startingAddress, quint16 quantityOfInputs,
+                                             quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -456,9 +424,8 @@ QList<bool> QAsciiModbus::readDiscreteInputs( const quint8 deviceAddress , const
     return QList<bool>();
 }
 
-QList<quint16> QAsciiModbus::readHoldingRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                                    const quint16 quantityOfRegisters , quint8 *const status ) const
-{
+QList<quint16> QAsciiModbus::readHoldingRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                                  quint16 quantityOfRegisters, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -545,9 +512,8 @@ QList<quint16> QAsciiModbus::readHoldingRegisters( const quint8 deviceAddress , 
     return QList<quint16>();
 }
 
-QList<quint16> QAsciiModbus::readInputRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                                  const quint16 quantityOfInputRegisters , quint8 *const status ) const
-{
+QList<quint16> QAsciiModbus::readInputRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                                quint16 quantityOfInputRegisters, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -634,9 +600,8 @@ QList<quint16> QAsciiModbus::readInputRegisters( const quint8 deviceAddress , co
     return QList<quint16>();
 }
 
-bool QAsciiModbus::writeSingleCoil( const quint8 deviceAddress , const quint16 outputAddress ,
-                                     const bool outputValue , quint8 *const status ) const
-{
+bool QAsciiModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, bool outputValue,
+                                   quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -715,9 +680,8 @@ bool QAsciiModbus::writeSingleCoil( const quint8 deviceAddress , const quint16 o
     return false;
 }
 
-bool QAsciiModbus::writeSingleRegister( const quint8 deviceAddress , const quint16 outputAddress ,
-                                         const quint16 registerValue , quint8 *const status ) const
-{
+bool QAsciiModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddress, quint16 registerValue,
+                                       quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -796,9 +760,8 @@ bool QAsciiModbus::writeSingleRegister( const quint8 deviceAddress , const quint
     return false;
 }
 
-bool QAsciiModbus::writeMultipleCoils( const quint8 deviceAddress , const quint16 startingAddress ,
-                                        const QList<bool> & outputValues , quint8 *const status ) const
-{
+bool QAsciiModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddress, const QList<bool>& outputValues,
+                                      quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -892,9 +855,8 @@ bool QAsciiModbus::writeMultipleCoils( const quint8 deviceAddress , const quint1
     return false;
 }
 
-bool QAsciiModbus::writeMultipleRegisters( const quint8 deviceAddress , const quint16 startingAddress ,
-                                            const QList<quint16> & registersValues , quint8 *const status ) const
-{
+bool QAsciiModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAddress,
+                                          const QList<quint16>& registersValues, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -980,9 +942,8 @@ bool QAsciiModbus::writeMultipleRegisters( const quint8 deviceAddress , const qu
     return false;
 }
 
-bool QAsciiModbus::maskWriteRegister( const quint8 deviceAddress , const quint16 referenceAddress ,
-                                       const quint16 andMask , const quint16 orMask , quint8 *const status ) const
-{
+bool QAsciiModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddress, quint16 andMask, quint16 orMask,
+                                     quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1061,13 +1022,9 @@ bool QAsciiModbus::maskWriteRegister( const quint8 deviceAddress , const quint16
     return false;
 }
 
-
-QList<quint16> QAsciiModbus::writeReadMultipleRegisters( const quint8 deviceAddress ,
-                                                          const quint16 writeStartingAddress ,
-                                                          const QList<quint16> & writeValues ,
-                                                          const quint16 readStartingAddress ,
-                                                          const quint16 quantityToRead , quint8 *const status ) const
-{
+QList<quint16> QAsciiModbus::writeReadMultipleRegisters(quint8 deviceAddress, quint16 writeStartingAddress,
+                                                        const QList<quint16>& writeValues, quint16 readStartingAddress,
+                                                        quint16 quantityToRead, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1161,9 +1118,8 @@ QList<quint16> QAsciiModbus::writeReadMultipleRegisters( const quint8 deviceAddr
     return QList<quint16>();
 }
 
-QList<quint16> QAsciiModbus::readFifoQueue( const quint8 deviceAddress , const quint16 fifoPointerAddress ,
-                                             quint8 *const status ) const
-{
+QList<quint16> QAsciiModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPointerAddress,
+                                           quint8* const status ) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1249,9 +1205,8 @@ QList<quint16> QAsciiModbus::readFifoQueue( const quint8 deviceAddress , const q
     return QList<quint16>();
 }
 
-QByteArray QAsciiModbus::executeCustomFunction( const quint8 deviceAddress , const quint8 modbusFunction ,
-                                                 QByteArray &data , quint8 *const status ) const
-{
+QByteArray QAsciiModbus::executeCustomFunction(quint8 deviceAddress, quint8 modbusFunction, const QByteArray& data,
+                                               quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1331,8 +1286,7 @@ QByteArray QAsciiModbus::executeCustomFunction( const quint8 deviceAddress , con
     return QByteArray();
 }
 
-QByteArray QAsciiModbus::executeRaw( QByteArray &data , quint8 *const status ) const
-{
+QByteArray QAsciiModbus::executeRaw(const QByteArray& data, quint8* const status) const {
     // Are we connected ?
     if ( !isOpen() )
     {
@@ -1363,17 +1317,14 @@ QByteArray QAsciiModbus::executeRaw( QByteArray &data , quint8 *const status ) c
     return QByteArray::fromHex( hexEncoded );
 }
 
-QByteArray QAsciiModbus::calculateCheckSum( QByteArray &data ) const
-{
+QByteArray QAsciiModbus::calculateCheckSum(const QByteArray& data) const {
     quint8 lrc = _calculateLrc( data );
     return QByteArray( (char *)&lrc , 1 );
 }
 
+#ifdef Q_OS_WIN
 
-# /***/ ifdef Q_OS_WIN /***********************************************************************************************/
-
-QByteArray QAsciiModbus::_read( const int numberBytes ) const
-{
+QByteArray QAsciiModbus::_read(int numberBytes) const {
     QByteArray data( numberBytes , 0 );
     DWORD size = 0;
 
@@ -1391,8 +1342,7 @@ QByteArray QAsciiModbus::_read( const int numberBytes ) const
     return data;
 }
 
-QByteArray QAsciiModbus::_readAll( void ) const
-{
+QByteArray QAsciiModbus::_readAll() const {
     QByteArray data( 1024 , 0 );
     DWORD size = 0;
     if ( ReadFile( _commPort , data.data() , 1024 , &size , NULL ) )
@@ -1407,8 +1357,7 @@ QByteArray QAsciiModbus::_readAll( void ) const
     return data;
 }
 
-QByteArray QAsciiModbus::_readLine( int maxBytes ) const
-{
+QByteArray QAsciiModbus::_readLine(int maxBytes) const {
     QByteArray data;
     DWORD size = 0;
 
@@ -1426,8 +1375,7 @@ QByteArray QAsciiModbus::_readLine( int maxBytes ) const
     return data;
 }
 
-bool QAsciiModbus::_write( QByteArray &data ) const
-{
+bool QAsciiModbus::_write(const QByteArray& data) const {
     DWORD size = 0;
 
     if ( data.size() == 0 ) return true;
@@ -1439,11 +1387,9 @@ bool QAsciiModbus::_write( QByteArray &data ) const
     return false;
 }
 
-# /***/ endif /* Q_OS_WIN *********************************************************************************************/
+#endif
 
-
-quint8 QAsciiModbus::_calculateLrc( const QByteArray &pdu ) const
-{
+quint8 QAsciiModbus::_calculateLrc(const QByteArray& pdu) const {
     qint8 nLRC = 0 ;
 
     for ( int i = 0 ; i < pdu.size() ; i++ )
@@ -1452,8 +1398,7 @@ quint8 QAsciiModbus::_calculateLrc( const QByteArray &pdu ) const
     return -nLRC;
 }
 
-bool QAsciiModbus::_checkLrc( const QByteArray &pdu ) const
-{
+bool QAsciiModbus::_checkLrc(const QByteArray& pdu) const {
     if ( pdu.size() < 6 ) return false;
 
     QByteArray msg = QByteArray::fromHex( pdu.mid( 1 , pdu.size() - 5 ) );
