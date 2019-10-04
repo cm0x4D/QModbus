@@ -4,7 +4,7 @@
 
 QTcpModbus::QTcpModbus(): _timeout( 500 ), _connectTimeout( 1000 ) {
     // Initialize random number generator to use for transaction ID generation.
-    qsrand( time( NULL ) );
+    qsrand( static_cast<unsigned int>(time( NULL )) );
 
     // Connect the socket's connection lost signal to my connection lost signal.
     QObject::connect( &_socket , SIGNAL( disconnected() ) , this , SIGNAL( connectionLost() ) );
@@ -42,11 +42,11 @@ void QTcpModbus::setConnectTimeout(int timeout) {
 }
 
 unsigned int QTcpModbus::timeout() const {
-    return _timeout;
+    return static_cast<unsigned int>(_timeout);
 }
 
 void QTcpModbus::setTimeout(unsigned int timeout) {
-    _timeout = timeout;
+    _timeout = static_cast<int>(timeout);
 }
 
 QList<bool> QTcpModbus::readCoils(quint8 deviceAddress, quint16 startingAddress, quint16 quantityOfCoils,
@@ -59,14 +59,14 @@ QList<bool> QTcpModbus::readCoils(quint8 deviceAddress, quint16 startingAddress,
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create tcp/modbus read coil status pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)6
-              << deviceAddress << (quint8)0x01 << startingAddress << quantityOfCoils;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(6)
+              << deviceAddress << static_cast<quint8>(0x01) << startingAddress << quantityOfCoils;
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -100,7 +100,7 @@ QList<bool> QTcpModbus::readCoils(quint8 deviceAddress, quint16 startingAddress,
         {
             // Convert data.
             QList<bool> list;
-            quint8 tmp;
+            quint8 tmp = 0;
             for ( int i = 0 ; i < quantityOfCoils ; i++ )
             {
                 if ( i % 8 == 0 ) rxStream >> tmp;
@@ -119,7 +119,7 @@ QList<bool> QTcpModbus::readCoils(quint8 deviceAddress, quint16 startingAddress,
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -140,14 +140,14 @@ QList<bool> QTcpModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startin
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create tcp/modbus read input status pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)6
-              << deviceAddress << (quint8)0x02 << startingAddress << quantityOfInputs;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(6)
+              << deviceAddress << static_cast<quint8>(0x02) << startingAddress << quantityOfInputs;
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -181,7 +181,7 @@ QList<bool> QTcpModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startin
         {
             // Convert data.
             QList<bool> list;
-            quint8 tmp;
+            quint8 tmp = 0;
             for ( int i = 0 ; i < quantityOfInputs ; i++ )
             {
                 if ( i % 8 == 0 ) rxStream >> tmp;
@@ -200,7 +200,7 @@ QList<bool> QTcpModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startin
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -221,14 +221,14 @@ QList<quint16> QTcpModbus::readHoldingRegisters(quint8 deviceAddress, quint16 st
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create tcp/modbus read holding registers pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)6
-              << deviceAddress << (quint8)0x03 << startingAddress << quantityOfRegisters;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(6)
+              << deviceAddress << static_cast<quint8>(0x03) << startingAddress << quantityOfRegisters;
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -280,7 +280,7 @@ QList<quint16> QTcpModbus::readHoldingRegisters(quint8 deviceAddress, quint16 st
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -301,14 +301,14 @@ QList<quint16> QTcpModbus::readInputRegisters(quint8 deviceAddress, quint16 star
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus read input status pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)6
-              << deviceAddress << (quint8)0x04 << startingAddress << quantityOfInputRegisters;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(6)
+              << deviceAddress << static_cast<quint8>(0x04) << startingAddress << quantityOfInputRegisters;
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -360,7 +360,7 @@ QList<quint16> QTcpModbus::readInputRegisters(quint8 deviceAddress, quint16 star
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -381,14 +381,15 @@ bool QTcpModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, bo
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus write single coil pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)6
-              << deviceAddress << (quint8)0x05 << outputAddress << ( outputValue ? (quint16)0xFF00 : (quint16)0x0000 );
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(6)
+              << deviceAddress << static_cast<quint8>(0x05)
+              << outputAddress << static_cast<quint16>( outputValue ? 0xFF00 : 0x0000 );
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -434,7 +435,7 @@ bool QTcpModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, bo
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -455,14 +456,14 @@ bool QTcpModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddress
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus write single coil pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)6
-              << deviceAddress << (quint8)0x06 << outputAddress << registerValue;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(6)
+              << deviceAddress << static_cast<quint8>(0x06) << outputAddress << registerValue;
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -508,7 +509,7 @@ bool QTcpModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddress
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -529,16 +530,17 @@ bool QTcpModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddres
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus write multiple coil pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    quint8 txBytes = outputValues.count() / 8;
+    quint8 txBytes = static_cast<quint8>(outputValues.count() / 8);
     if ( outputValues.count() % 8 != 0 ) txBytes++;
-    pduStream << transactionId << (quint16)0 << (quint16)( txBytes + 7 )
-              << deviceAddress << (quint8)0x0F << startingAddress << (quint16)outputValues.count() << txBytes;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>( txBytes + 7 )
+              << deviceAddress << static_cast<quint8>(0x0F) << startingAddress
+              << static_cast<quint16>(outputValues.count()) << txBytes;
 
     // Encode the binary values.
     quint8 tmp = 0;
@@ -597,7 +599,7 @@ bool QTcpModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddres
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -618,15 +620,16 @@ bool QTcpModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAd
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus write multiple registers pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    quint8 txBytes = registersValues.count() * 2;
-    pduStream << transactionId << (quint16)0 << (quint16)( txBytes + 7 )
-              << deviceAddress << (quint8)0x10 << startingAddress << (quint16)registersValues.count() << txBytes;
+    quint8 txBytes = static_cast<quint8>(registersValues.count() * 2);
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>( txBytes + 7 )
+              << deviceAddress << static_cast<quint8>(0x10) << startingAddress <<
+                 static_cast<quint16>(registersValues.count()) << txBytes;
 
     // Encode the register values.
     foreach ( quint16 reg , registersValues )
@@ -678,7 +681,7 @@ bool QTcpModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAd
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -699,14 +702,14 @@ bool QTcpModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddres
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus mask write register pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)8
-              << deviceAddress << (quint8)0x16 << referenceAddress << andMask << orMask;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(8)
+              << deviceAddress << static_cast<quint8>(0x16) << referenceAddress << andMask << orMask;
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -752,7 +755,7 @@ bool QTcpModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddres
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -774,15 +777,16 @@ QList<quint16> QTcpModbus::writeReadMultipleRegisters(quint8 deviceAddress, quin
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus read holding registers pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)( writeValues.count() * 2 + 12 )
-              << deviceAddress << (quint8)0x17 << readStartingAddress << quantityToRead
-              << writeStartingAddress << (quint16)writeValues.count() << (quint16)( writeValues.count() * 2 );
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>( writeValues.count() * 2 + 12 )
+              << deviceAddress << static_cast<quint8>(0x17) << readStartingAddress << quantityToRead
+              << writeStartingAddress << static_cast<quint16>(writeValues.count())
+              << static_cast<quint16>( writeValues.count() * 2 );
 
     // Add data.
     foreach ( quint16 reg , writeValues )
@@ -840,7 +844,7 @@ QList<quint16> QTcpModbus::writeReadMultipleRegisters(quint8 deviceAddress, quin
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -861,14 +865,14 @@ QList<quint16> QTcpModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPoint
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus read FIFO registers pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)4
-              << deviceAddress << (quint8)0x18 << fifoPointerAddress;
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>(4)
+              << deviceAddress << static_cast<quint8>(0x18) << fifoPointerAddress;
 
     // Clear the RX buffer before making the request.
     _socket.readAll();
@@ -922,7 +926,7 @@ QList<quint16> QTcpModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPoint
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {
@@ -943,13 +947,13 @@ QByteArray QTcpModbus::executeCustomFunction(quint8 deviceAddress, quint8 modbus
     }
 
     // Create a transaction number.
-    quint16 transactionId = qrand();
+    quint16 transactionId = static_cast<quint16>(qrand());
 
     // Create modbus pdu (Modbus uses Big Endian).
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << transactionId << (quint16)0 << (quint16)( data.size() + 2 )
+    pduStream << transactionId << static_cast<quint16>(0) << static_cast<quint16>( data.size() + 2 )
               << deviceAddress << modbusFunction;
     pdu += data;
 
@@ -995,7 +999,7 @@ QByteArray QTcpModbus::executeCustomFunction(quint8 deviceAddress, quint8 modbus
         // What was wrong ?
         if ( pdu.size() == 9 )
         {
-            if ( status ) *status = pdu[8];
+            if ( status ) *status = static_cast<quint8>(pdu[8]);
         }
         else
         {

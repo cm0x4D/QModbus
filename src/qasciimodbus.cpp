@@ -85,7 +85,7 @@ bool QAsciiModbus::open(const QString &device, BaudRate baudRate, BitsPerCharact
             settings.c_iflag |= IXON | IXOFF | IXANY;
             break;
     }
-    settings.c_cc[VTIME] = _timeout / 100;
+    settings.c_cc[VTIME] = static_cast<cc_t>(_timeout / 100);
     settings.c_cc[VMIN] = 0;
     ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
@@ -227,7 +227,7 @@ void QAsciiModbus::setTimeout(unsigned int timeout) {
 
         struct termios settings;
         ::tcgetattr( _commPort.handle() , &settings );
-        settings.c_cc[VTIME] = _timeout / 100;
+        settings.c_cc[VTIME] = static_cast<cc_t>(_timeout / 100);
         settings.c_cc[VMIN] = 0;
         ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
@@ -259,7 +259,7 @@ QList<bool> QAsciiModbus::readCoils(quint8 deviceAddress, quint16 startingAddres
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x01 << startingAddress << quantityOfCoils;
+    pduStream << deviceAddress << static_cast<quint8>(0x01) << startingAddress << quantityOfCoils;
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -302,7 +302,7 @@ QList<bool> QAsciiModbus::readCoils(quint8 deviceAddress, quint16 startingAddres
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return QList<bool>();
     }
 
@@ -319,7 +319,7 @@ QList<bool> QAsciiModbus::readCoils(quint8 deviceAddress, quint16 startingAddres
         {
             // It is ok, read and convert the data.
             QList<bool> list;
-            quint8 tmp;
+            quint8 tmp = 0;
             for ( int i = 0 ; i < quantityOfCoils ; i++ )
             {
                 if ( i % 8 == 0 ) rxStream >> tmp;
@@ -348,7 +348,7 @@ QList<bool> QAsciiModbus::readDiscreteInputs(quint8 deviceAddress, quint16 start
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x02 << startingAddress << quantityOfInputs;
+    pduStream << deviceAddress << static_cast<quint8>(0x02) << startingAddress << quantityOfInputs;
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -391,7 +391,7 @@ QList<bool> QAsciiModbus::readDiscreteInputs(quint8 deviceAddress, quint16 start
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return QList<bool>();
     }
 
@@ -408,7 +408,7 @@ QList<bool> QAsciiModbus::readDiscreteInputs(quint8 deviceAddress, quint16 start
         {
             // It is ok, read and convert the data.
             QList<bool> list;
-            quint8 tmp;
+            quint8 tmp = 0;
             for ( int i = 0 ; i < quantityOfInputs ; i++ )
             {
                 if ( i % 8 == 0 ) rxStream >> tmp;
@@ -437,7 +437,7 @@ QList<quint16> QAsciiModbus::readHoldingRegisters(quint8 deviceAddress, quint16 
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x03 << startingAddress << quantityOfRegisters;
+    pduStream << deviceAddress << static_cast<quint8>(0x03) << startingAddress << quantityOfRegisters;
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -479,7 +479,7 @@ QList<quint16> QAsciiModbus::readHoldingRegisters(quint8 deviceAddress, quint16 
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return QList<quint16>();
     }
 
@@ -525,7 +525,7 @@ QList<quint16> QAsciiModbus::readInputRegisters(quint8 deviceAddress, quint16 st
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x04 << startingAddress << quantityOfInputRegisters;
+    pduStream << deviceAddress << static_cast<quint8>(0x04) << startingAddress << quantityOfInputRegisters;
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -567,7 +567,7 @@ QList<quint16> QAsciiModbus::readInputRegisters(quint8 deviceAddress, quint16 st
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return QList<quint16>();
     }
 
@@ -613,7 +613,8 @@ bool QAsciiModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, 
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x05 << outputAddress << ( outputValue ? (quint16)0xFF00 : (quint16)0x0000 );
+    pduStream << deviceAddress << static_cast<quint8>(0x05) << outputAddress
+              << static_cast<quint16>( outputValue ? 0xFF00 : 0x0000 );
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -654,7 +655,7 @@ bool QAsciiModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, 
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return false;
     }
 
@@ -693,7 +694,7 @@ bool QAsciiModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddre
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x06 << outputAddress << registerValue;
+    pduStream << deviceAddress << static_cast<quint8>(0x06) << outputAddress << registerValue;
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -734,7 +735,7 @@ bool QAsciiModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddre
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return false;
     }
 
@@ -773,9 +774,10 @@ bool QAsciiModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddr
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    quint8 txBytes = outputValues.count() / 8;
+    quint8 txBytes = static_cast<quint8>(outputValues.count() / 8);
     if ( outputValues.count() % 8 != 0 ) txBytes++;
-    pduStream << deviceAddress << (quint8)0x0F << startingAddress << (quint16)outputValues.count() << txBytes;
+    pduStream << deviceAddress << static_cast<quint8>(0x0F) << startingAddress
+              << static_cast<quint16>(outputValues.count()) << txBytes;
 
     // Encode the binary values.
     quint8 tmp = 0;
@@ -829,7 +831,7 @@ bool QAsciiModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddr
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return false;
     }
 
@@ -868,8 +870,9 @@ bool QAsciiModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 starting
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    quint8 txBytes = registersValues.count() * 2;
-    pduStream << deviceAddress << (quint8)0x10 << startingAddress << (quint16)registersValues.count() << txBytes;
+    quint8 txBytes = static_cast<quint8>(registersValues.count() * 2);
+    pduStream << deviceAddress << static_cast<quint8>(0x10) << startingAddress
+              << static_cast<quint16>(registersValues.count()) << txBytes;
 
     // Encode the register values.
     foreach ( quint16 reg , registersValues )
@@ -916,7 +919,7 @@ bool QAsciiModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 starting
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return false;
     }
 
@@ -955,7 +958,7 @@ bool QAsciiModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddr
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x16 << referenceAddress << andMask << orMask;
+    pduStream << deviceAddress << static_cast<quint8>(0x16) << referenceAddress << andMask << orMask;
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -996,7 +999,7 @@ bool QAsciiModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddr
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return false;
     }
 
@@ -1036,8 +1039,9 @@ QList<quint16> QAsciiModbus::writeReadMultipleRegisters(quint8 deviceAddress, qu
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x17 << readStartingAddress << quantityToRead
-              << writeStartingAddress << (quint16)writeValues.count() << (quint16)( writeValues.count() * 2 );
+    pduStream << deviceAddress << static_cast<quint8>(0x17) << readStartingAddress << quantityToRead
+              << writeStartingAddress << static_cast<quint16>(writeValues.count())
+              << static_cast<quint16>( writeValues.count() * 2 );
 
     // Add data.
     foreach ( quint16 reg , writeValues )
@@ -1085,7 +1089,7 @@ QList<quint16> QAsciiModbus::writeReadMultipleRegisters(quint8 deviceAddress, qu
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return QList<quint16>();
     }
 
@@ -1131,7 +1135,7 @@ QList<quint16> QAsciiModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPoi
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x18 << fifoPointerAddress;
+    pduStream << deviceAddress << static_cast<quint8>(0x18) << fifoPointerAddress;
 
     // Encode to hex.
     QByteArray hexEncoded( ":" );
@@ -1172,7 +1176,7 @@ QList<quint16> QAsciiModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPoi
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return QList<quint16>();
     }
 
@@ -1260,7 +1264,7 @@ QByteArray QAsciiModbus::executeCustomFunction(quint8 deviceAddress, quint8 modb
     // Was it a Modbus error?
     if ( pdu[1] & 0x80 )
     {
-        if ( status ) *status = pdu[2];
+        if ( status ) *status = static_cast<quint8>(pdu[2]);
         return QByteArray();
     }
 
@@ -1319,7 +1323,7 @@ QByteArray QAsciiModbus::executeRaw(const QByteArray& data, quint8* const status
 
 QByteArray QAsciiModbus::calculateCheckSum(const QByteArray& data) const {
     quint8 lrc = _calculateLrc( data );
-    return QByteArray( (char *)&lrc , 1 );
+    return QByteArray( reinterpret_cast<char *>(&lrc) , 1 );
 }
 
 #ifdef Q_OS_WIN
@@ -1395,14 +1399,14 @@ quint8 QAsciiModbus::_calculateLrc(const QByteArray& pdu) const {
     for ( int i = 0 ; i < pdu.size() ; i++ )
         nLRC += pdu[i];
 
-    return -nLRC;
+    return static_cast<quint8>(-nLRC);
 }
 
 bool QAsciiModbus::_checkLrc(const QByteArray& pdu) const {
     if ( pdu.size() < 6 ) return false;
 
     QByteArray msg = QByteArray::fromHex( pdu.mid( 1 , pdu.size() - 5 ) );
-    quint8 oLrc = QByteArray::fromHex( pdu.mid( pdu.size() - 4 , 2 ) )[0];
+    quint8 oLrc = static_cast<quint8>(QByteArray::fromHex( pdu.mid( pdu.size() - 4 , 2 ) )[0]);
     quint8 lrc = _calculateLrc( msg );
 
     return oLrc == lrc;

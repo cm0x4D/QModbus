@@ -129,7 +129,7 @@ bool QRtuModbus::open(const QString &device, BaudRate baudRate, StopBits stopBit
             settings.c_iflag |= IXON | IXOFF | IXANY;
             break;
     }
-    settings.c_cc[VTIME] = _timeout / 100;
+    settings.c_cc[VTIME] = static_cast<cc_t>(_timeout / 100);
     settings.c_cc[VMIN] = 0;
     ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
@@ -346,7 +346,7 @@ void QRtuModbus::setTimeout(unsigned int timeout) {
 
         struct termios settings;
         ::tcgetattr( _commPort.handle() , &settings );
-        settings.c_cc[VTIME] = _timeout / 100;
+        settings.c_cc[VTIME] = static_cast<cc_t>(_timeout / 100);
         settings.c_cc[VMIN] = 0;
         ::tcsetattr( _commPort.handle() , TCSANOW , &settings );
 
@@ -378,11 +378,11 @@ QList<bool> QRtuModbus::readCoils(quint8 deviceAddress, quint16 startingAddress,
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x01 << startingAddress << quantityOfCoils;
+    pduStream << deviceAddress << static_cast<quint8>(0x01) << startingAddress << quantityOfCoils;
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -414,7 +414,7 @@ QList<bool> QRtuModbus::readCoils(quint8 deviceAddress, quint16 startingAddress,
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return QList<bool>();
     }
@@ -442,7 +442,7 @@ QList<bool> QRtuModbus::readCoils(quint8 deviceAddress, quint16 startingAddress,
         {
             // It is ok, read and convert the data.
             QList<bool> list;
-            quint8 tmp;
+            quint8 tmp = 0;
             for ( int i = 0 ; i < quantityOfCoils ; i++ )
             {
                 if ( i % 8 == 0 ) rxStream >> tmp;
@@ -471,11 +471,11 @@ QList<bool> QRtuModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startin
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x02 << startingAddress << quantityOfInputs;
+    pduStream << deviceAddress << static_cast<quint8>(0x02) << startingAddress << quantityOfInputs;
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -507,7 +507,7 @@ QList<bool> QRtuModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startin
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return QList<bool>();
     }
@@ -535,7 +535,7 @@ QList<bool> QRtuModbus::readDiscreteInputs(quint8 deviceAddress, quint16 startin
         {
             // It is ok, read and convert the data.
             QList<bool> list;
-            quint8 tmp;
+            quint8 tmp = 0;
             for ( int i = 0 ; i < quantityOfInputs ; i++ )
             {
                 if ( i % 8 == 0 ) rxStream >> tmp;
@@ -564,11 +564,11 @@ QList<quint16> QRtuModbus::readHoldingRegisters(quint8 deviceAddress, quint16 st
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x03 << startingAddress << quantityOfRegisters;
+    pduStream << deviceAddress << static_cast<quint8>(0x03) << startingAddress << quantityOfRegisters;
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -599,7 +599,7 @@ QList<quint16> QRtuModbus::readHoldingRegisters(quint8 deviceAddress, quint16 st
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return QList<quint16>();
     }
@@ -656,11 +656,11 @@ QList<quint16> QRtuModbus::readInputRegisters(quint8 deviceAddress, quint16 star
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x04 << startingAddress << quantityOfInputRegisters;
+    pduStream << deviceAddress << static_cast<quint8>(0x04) << startingAddress << quantityOfInputRegisters;
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -691,7 +691,7 @@ QList<quint16> QRtuModbus::readInputRegisters(quint8 deviceAddress, quint16 star
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return QList<quint16>();
     }
@@ -748,11 +748,12 @@ bool QRtuModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, bo
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x05 << outputAddress << ( outputValue ? (quint16)0xFF00 : (quint16)0x0000 );
+    pduStream << deviceAddress << static_cast<quint8>(0x05) << outputAddress
+              << static_cast<quint16>( outputValue ? 0xFF00 : 0x0000 );
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -782,7 +783,7 @@ bool QRtuModbus::writeSingleCoil(quint8 deviceAddress, quint16 outputAddress, bo
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return false;
     }
@@ -832,11 +833,11 @@ bool QRtuModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddress
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x06 << outputAddress << registerValue;
+    pduStream << deviceAddress << static_cast<quint8>(0x06) << outputAddress << registerValue;
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -866,7 +867,7 @@ bool QRtuModbus::writeSingleRegister(quint8 deviceAddress, quint16 outputAddress
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return false;
     }
@@ -916,9 +917,10 @@ bool QRtuModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddres
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    quint8 txBytes = outputValues.count() / 8;
+    quint8 txBytes = static_cast<quint8>(outputValues.count() / 8);
     if ( outputValues.count() % 8 != 0 ) txBytes++;
-    pduStream << deviceAddress << (quint8)0x0F << startingAddress << (quint16)outputValues.count() << txBytes;
+    pduStream << deviceAddress << static_cast<quint8>(0x0F) << startingAddress
+              << static_cast<quint16>(outputValues.count()) << txBytes;
 
     // Encode the binary values.
     quint8 tmp = 0;
@@ -935,7 +937,7 @@ bool QRtuModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddres
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -965,7 +967,7 @@ bool QRtuModbus::writeMultipleCoils(quint8 deviceAddress, quint16 startingAddres
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return false;
     }
@@ -1015,8 +1017,9 @@ bool QRtuModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAd
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    quint8 txBytes = registersValues.count() * 2;
-    pduStream << deviceAddress << (quint8)0x10 << startingAddress << (quint16)registersValues.count() << txBytes;
+    quint8 txBytes = static_cast<quint8>(registersValues.count() * 2);
+    pduStream << deviceAddress << static_cast<quint8>(0x10) << startingAddress
+              << static_cast<quint16>(registersValues.count()) << txBytes;
 
     // Encode the register values.
     foreach ( quint16 reg , registersValues )
@@ -1026,7 +1029,7 @@ bool QRtuModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAd
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -1056,7 +1059,7 @@ bool QRtuModbus::writeMultipleRegisters(quint8 deviceAddress, quint16 startingAd
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return false;
     }
@@ -1106,11 +1109,11 @@ bool QRtuModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddres
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x16 << referenceAddress << andMask << orMask;
+    pduStream << deviceAddress << static_cast<quint8>(0x16) << referenceAddress << andMask << orMask;
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -1140,7 +1143,7 @@ bool QRtuModbus::maskWriteRegister(quint8 deviceAddress, quint16 referenceAddres
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return false;
     }
@@ -1191,8 +1194,9 @@ QList<quint16> QRtuModbus::writeReadMultipleRegisters(quint8 deviceAddress, quin
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x17 << readStartingAddress << quantityToRead
-              << writeStartingAddress << (quint16)writeValues.count() << (quint16)( writeValues.count() * 2 );
+    pduStream << deviceAddress << static_cast<quint8>(0x17) << readStartingAddress << quantityToRead
+              << writeStartingAddress << static_cast<quint16>(writeValues.count())
+              << static_cast<quint16>( writeValues.count() * 2 );
 
     // Add data.
     foreach ( quint16 reg , writeValues )
@@ -1202,7 +1206,7 @@ QList<quint16> QRtuModbus::writeReadMultipleRegisters(quint8 deviceAddress, quin
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -1233,7 +1237,7 @@ QList<quint16> QRtuModbus::writeReadMultipleRegisters(quint8 deviceAddress, quin
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return QList<quint16>();
     }
@@ -1290,11 +1294,11 @@ QList<quint16> QRtuModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPoint
     QByteArray pdu;
     QDataStream pduStream( &pdu , QIODevice::WriteOnly );
     pduStream.setByteOrder( QDataStream::BigEndian );
-    pduStream << deviceAddress << (quint8)0x18 << fifoPointerAddress;
+    pduStream << deviceAddress << static_cast<quint8>(0x18) << fifoPointerAddress;
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -1324,7 +1328,7 @@ QList<quint16> QRtuModbus::readFifoQueue(quint8 deviceAddress, quint16 fifoPoint
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return QList<quint16>();
     }
@@ -1386,7 +1390,7 @@ QByteArray QRtuModbus::executeCustomFunction(const quint8 deviceAddress, quint8 
 
     // Calculate CRC and add it to the PDU.
     quint16 crc = _calculateCrc( pdu );
-    pduStream.writeRawData( (const char *)&crc , sizeof( crc ) );
+    pduStream.writeRawData( reinterpret_cast<char *>(&crc) , sizeof( crc ) );
 
     // Clear the RX buffer before making the request.
     _readAll();
@@ -1414,7 +1418,7 @@ QByteArray QRtuModbus::executeCustomFunction(const quint8 deviceAddress, quint8 
         }
         else
         {
-            if ( status ) *status = pdu[2];
+            if ( status ) *status = static_cast<quint8>(pdu[2]);
         }
         return QByteArray();
     }
@@ -1483,7 +1487,7 @@ QByteArray QRtuModbus::executeRaw(const QByteArray& data, quint8* const status) 
 
 QByteArray QRtuModbus::calculateCheckSum(const QByteArray& data) const {
     quint16 crc = _calculateCrc( data );
-    return QByteArray( (char *)&crc , 2 );
+    return QByteArray( reinterpret_cast<char *>(&crc) , 2 );
 }
 
 
@@ -1560,7 +1564,7 @@ quint16 QRtuModbus::_calculateCrc(const QByteArray& pdu) const {
     crc = 0xFFFF;
     for ( int i = 0 ; i < pdu.size() ; i++ )
     {
-        crc = crc ^ (unsigned char)pdu.at( i );
+        crc = crc ^ static_cast<unsigned char>(pdu.at( i ));
         for (int j = 0 ; j < 8 ; j++ )
         {
             tmp = crc;
@@ -1581,5 +1585,5 @@ bool QRtuModbus::_checkCrc(const QByteArray& pdu) const {
 
     quint16 crc = _calculateCrc( msg );
 
-    return pdu.endsWith( QByteArray( (const char *)&crc , 2 ) );
+    return pdu.endsWith( QByteArray( reinterpret_cast<char *>(&crc) , 2 ) );
 }
